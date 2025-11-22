@@ -17,16 +17,41 @@ TARGET_CARD_TEXT = "Transforme-se Play - São Carlos"
 WAITING_TEXT = "O LINK SERÁ DISPONIBILIZADO EM MOMENTO OPORTUNO"
 
 
-def send_whatsapp(message):
+def upload_image(file_path):
+    """Faz upload da imagem para o tmpfiles.org e retorna a URL."""
+    try:
+        with open(file_path, "rb") as f:
+            response = requests.post(
+                "https://tmpfiles.org/api/v1/upload", files={"file": f}
+            )
+            if response.status_code == 200:
+                data = response.json()
+                # A URL retornada é a de visualização, precisamos da URL direta (dl.tmpfiles.org)
+                # Ex: https://tmpfiles.org/12345/image.png -> https://tmpfiles.org/dl/12345/image.png
+                url = data["data"]["url"]
+                direct_url = url.replace("tmpfiles.org/", "tmpfiles.org/dl/")
+                return direct_url
+            else:
+                print(f"[WARN] Falha no upload da imagem: {response.status_code}")
+                return None
+    except Exception as e:
+        print(f"[ERROR] Erro ao fazer upload: {e}")
+        return None
+
+
+def send_whatsapp(message, image_url=None):
     if not WHATSAPP_PHONE or not WHATSAPP_APIKEY:
         print("[WARN] WhatsApp não configurado (PHONE ou APIKEY faltando).")
         return
 
     try:
-        # Codifica a mensagem para URL (ex: espaços viram %20)
+        # Se tiver imagem, adiciona ao texto (CallMeBot renderiza o preview)
+        if image_url:
+            message += f"\n\nScreenshot: {image_url}"
+
+        # Codifica a mensagem para URL
         encoded_message = urllib.parse.quote(message)
 
-        # Monta a URL usando template string (f-string)
         url = f"https://api.callmebot.com/whatsapp.php?phone={WHATSAPP_PHONE}&text={encoded_message}&apikey={WHATSAPP_APIKEY}"
 
         response = requests.get(url)
@@ -44,30 +69,26 @@ async def login(page):
         return
 
     try:
-        print("[INFO] Iniciando login no Padlet...")
+        print(f"[INFO] Iniciando login no Padlet com: {PADLET_EMAIL}...")
         await page.goto("https://padlet.com/auth/login", timeout=30000)
         await page.wait_for_load_state("networkidle")
 
         # Preenche e-mail
         await page.fill('input[type="email"]', PADLET_EMAIL)
-        # Clica em continuar ou aperta enter (Padlet as vezes pede só email primeiro)
         await page.press('input[type="email"]', "Enter")
 
         # Espera campo de senha aparecer
         try:
             await page.wait_for_selector('input[type="password"]', timeout=5000)
         except:
-            # Se não apareceu, talvez precise clicar num botão "Continuar"
-            # Mas geralmente o Enter funciona. Se falhar, vamos tentar clicar no botão submit
             pass
 
         await page.fill('input[type="password"]', PADLET_PASSWORD)
         await page.press('input[type="password"]', "Enter")
 
         # Espera redirecionamento para dashboard ou home
-        # Aceita qualquer URL que contenha dashboard
         await page.wait_for_url("**/dashboard**", timeout=30000)
-        print("[SUCCESS] Login realizado com sucesso!")
+        print("[SUCCESS] Login realizado com sucesso! Redirecionado para dashboard.")
 
     except Exception as e:
         print(f"[ERROR] Falha no login: {e}. Tentando prosseguir mesmo assim.")
@@ -91,6 +112,7 @@ async def main():
             try:
                 await page.goto(PADLET_HOME, timeout=30000)
                 await page.wait_for_load_state("networkidle")
+                print(f"[DEBUG] Título da página Home: {await page.title()}")
             except Exception as e:
                 print(f"[WARN] Falha ao carregar home ({e}). Tentando fallback.")
 
@@ -119,18 +141,41 @@ async def main():
                 print(f"[INFO] Verificando disponibilidade em: {final_url}")
                 await page.goto(final_url, timeout=60000)
                 await page.wait_for_load_state("networkidle")
+                print(f"[DEBUG] Título da página da Missão: {await page.title()}")
 
                 # 3. Verificar se o texto de espera AINDA existe
                 content = await page.content()
 
+                # Tenta localizar o texto para scrollar até ele
+                waiting_locator = page.get_by_text(WAITING_TEXT)
+                if await waiting_locator.count() > 0:
+                    print("[INFO] Scrollando até o texto de espera...")
+                    await waiting_locator.first.scroll_into_view_if_needed()
+                    # Dá um tempinho pro scroll assentar
+                    await asyncio.sleep(1)
+
+                # Tira screenshot
+                screenshot_path = "status_padlet.png"
+                await page.screenshot(path=screenshot_path)
+                print(f"[INFO] Screenshot salvo em {screenshot_path}")
+
+                # Faz upload
+                image_url = upload_image(screenshot_path)
+                if image_url:
+                    print(f"[INFO] Imagem enviada para nuvem: {image_url}")
+
                 if WAITING_TEXT in content:
                     print(
-                        "[INFO] Missão AINDA NÃO disponível (Texto de espera encontrado)."
+                        f"[INFO] Missão AINDA NÃO disponível. Texto de espera encontrado: '{WAITING_TEXT}'"
                     )
+                    # Envia notificação mesmo assim
+                    msg = f"Status Padlet: Missão AINDA NÃO disponível.\nLink: {final_url}"
+                    send_whatsapp(msg, image_url)
                 else:
                     print("[ALERT] !!! MISSÃO DISPONÍVEL !!!")
-                    msg = f"A missão está disponível! Acesse agora: {final_url}"
-                    send_whatsapp(msg)
+                    print("[INFO] O texto de espera NÃO foi encontrado na página.")
+                    msg = f"🚨 A missão está disponível! Acesse agora: {final_url}"
+                    send_whatsapp(msg, image_url)
             else:
                 print("[ERROR] Não foi possível determinar a URL da missão.")
 
