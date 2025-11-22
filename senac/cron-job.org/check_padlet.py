@@ -3,6 +3,7 @@ import requests
 import urllib.parse
 from datetime import datetime
 from playwright.async_api import async_playwright
+import os
 
 
 # WhatsApp <https://www.callmebot.com/blog/free-api-whatsapp-messages>
@@ -100,9 +101,17 @@ async def login(page):
 
 async def main():
     async with async_playwright() as p:
-        # Usa o Chromium do sistema para evitar problemas de dependência do Playwright no Arch
+        # Verifica se o Chromium do sistema existe (Arch Linux), caso contrário usa o do Playwright (GitHub Actions/Outros)
+        sys_chromium = "/usr/bin/chromium"
+        executable_path = sys_chromium if os.path.exists(sys_chromium) else None
+
+        if executable_path:
+            print(f"[INFO] Usando Chromium do sistema: {executable_path}")
+        else:
+            print("[INFO] Usando Chromium do Playwright (bundled)")
+
         browser = await p.chromium.launch(
-            headless=True, executable_path="/usr/bin/chromium"
+            headless=True, executable_path=executable_path
         )
         context = await browser.new_context()
         page = await context.new_page()
