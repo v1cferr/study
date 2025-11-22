@@ -1,13 +1,17 @@
 import asyncio
 import requests
 import urllib.parse
+from datetime import datetime
 from playwright.async_api import async_playwright
 
-# WhatsApp (CallMeBot)
+
+# WhatsApp <https://www.callmebot.com/blog/free-api-whatsapp-messages>
+# Test0: +5516991641893
+# Test1: +5516996209765
 WHATSAPP_PHONE = "+5511980805097"
 WHATSAPP_APIKEY = "7931506"
 
-# Padlet Credenciais (adguard-temp-mail)
+# Padlet Credenciais <https://adguard.com/pt_br/adguard-temp-mail/overview.html>
 PADLET_EMAIL = "federal.jackal.xeyf@protectsmail.net"
 PADLET_PASSWORD = "federal.jackal.xeyf"
 
@@ -164,17 +168,20 @@ async def main():
                 if image_url:
                     print(f"[INFO] Imagem enviada para nuvem: {image_url}")
 
+                # Timestamp atual
+                now = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+
                 if WAITING_TEXT in content:
                     print(
                         f"[INFO] Missão AINDA NÃO disponível. Texto de espera encontrado: '{WAITING_TEXT}'"
                     )
                     # Envia notificação mesmo assim
-                    msg = f"Status Padlet: Missão AINDA NÃO disponível.\nLink: {final_url}"
+                    msg = f"📅 {now}\nStatus Padlet: Missão AINDA NÃO disponível.\nLink: {final_url}"
                     send_whatsapp(msg, image_url)
                 else:
                     print("[ALERT] !!! MISSÃO DISPONÍVEL !!!")
                     print("[INFO] O texto de espera NÃO foi encontrado na página.")
-                    msg = f"🚨 A missão está disponível! Acesse agora: {final_url}"
+                    msg = f"📅 {now}\n🚨 A missão está disponível! Acesse agora: {final_url}"
                     send_whatsapp(msg, image_url)
             else:
                 print("[ERROR] Não foi possível determinar a URL da missão.")
