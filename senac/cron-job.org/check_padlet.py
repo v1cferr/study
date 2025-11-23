@@ -1,7 +1,7 @@
 import asyncio
 import requests
 import urllib.parse
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from playwright.async_api import async_playwright
 import os
 
@@ -177,20 +177,35 @@ async def main():
                 if image_url:
                     print(f"[INFO] Imagem enviada para nuvem: {image_url}")
 
-                # Timestamp atual
-                now = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+                # Timestamp atual em Brasília (UTC-3)
+                # O Brasil não tem horário de verão atualmente, então -3h é fixo
+                brt_offset = timedelta(hours=-3)
+                brt_tz = timezone(brt_offset)
+                now = datetime.now(brt_tz)
+                now_str = now.strftime("%d/%m/%Y %H:%M:%S")
 
                 if WAITING_TEXT in content:
                     print(
                         f"[INFO] Missão AINDA NÃO disponível. Texto de espera encontrado: '{WAITING_TEXT}'"
                     )
-                    # Envia notificação mesmo assim
-                    msg = f"📅 {now}\nStatus Padlet: Missão AINDA NÃO disponível.\nLink: {final_url}"
-                    send_whatsapp(msg, image_url)
+
+                    # Lógica para enviar apenas 1x por dia (ex: entre 08:00 e 08:05)
+                    # Como o cron roda a cada 5 min, isso garante apenas 1 envio
+                    if now.hour == 8 and 0 <= now.minute < 5:
+                        print(
+                            "[INFO] Horário agendado (08:00). Enviando relatório diário."
+                        )
+                        msg = f"📅 {now_str}\nStatus Diário: Missão AINDA NÃO disponível.\nLink: {final_url}"
+                        send_whatsapp(msg, image_url)
+                    else:
+                        print(
+                            "[INFO] Fora do horário de relatório diário (08:00). Notificação pulada."
+                        )
                 else:
                     print("[ALERT] !!! MISSÃO DISPONÍVEL !!!")
                     print("[INFO] O texto de espera NÃO foi encontrado na página.")
-                    msg = f"📅 {now}\n🚨 A missão está disponível! Acesse agora: {final_url}"
+                    # Mensagem URGENTE
+                    msg = f"📅 {now_str}\n🚨 URGENTE: A MISSÃO ESTÁ DISPONÍVEL! 🚨\n\nCORRA E FAÇA AGORA!\nLink: {final_url}"
                     send_whatsapp(msg, image_url)
             else:
                 print("[ERROR] Não foi possível determinar a URL da missão.")
