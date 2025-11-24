@@ -8,6 +8,8 @@ from pathlib import Path
 
 # Use `pip install -r requirements.txt` to install dependencies
 
+import platform
+
 # --- Configuration ---
 # EDIT THESE VARIABLES FOR YOUR LOCAL ENVIRONMENT
 
@@ -21,7 +23,7 @@ CLIENT_MODS_DIR = (
     "/home/v1cferr/Projects/GitHub/v1cferr/study/minecraft/testes/minecraft-client/mods"
 )
 
-# The directory of your Minecraft Server
+# The directory where your server is installed
 SERVER_DIR = (
     "/home/v1cferr/Projects/GitHub/v1cferr/study/minecraft/testes/minecraft-server"
 )
@@ -29,8 +31,12 @@ SERVER_DIR = (
 # 3. Server Settings
 SERVER_MODS_DIR = os.path.join(SERVER_DIR, "mods")
 DISABLED_MODS_DIR = os.path.join(SERVER_DIR, "disabled_mods")
-# Adicionar uma verificação para saber se é windows ou linux
-SERVER_START_SCRIPT = "./run.sh nogui"  # Command to start server without GUI
+
+# Automatic OS detection for start script
+if platform.system() == "Windows":
+    SERVER_START_SCRIPT = "run.bat"
+else:
+    SERVER_START_SCRIPT = "./run.sh"  # Linux/Mac
 
 # --- End Configuration ---
 
