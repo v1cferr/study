@@ -6,12 +6,14 @@ import glob
 import google.generativeai as genai
 from pathlib import Path
 
+# Use `pip install -r requirements.txt` to install dependencies
+
 # --- Configuration ---
 # EDIT THESE VARIABLES FOR YOUR LOCAL ENVIRONMENT
 
 # 1. Google Gemini API Key
 # Paste your key here. Since this is local, it's okay to hardcode it.
-GEMINI_API_KEY = "AIzaSyBkYq1766_RqKiFoDtKbCsOMLF8GEu9wx8"
+GEMINI_API_KEY = "YOUR_API_KEY_HERE"
 
 # 2. Directories
 # The directory where your client-side modpack is installed (CurseForge instance)
@@ -27,6 +29,7 @@ SERVER_DIR = (
 # 3. Server Settings
 SERVER_MODS_DIR = os.path.join(SERVER_DIR, "mods")
 DISABLED_MODS_DIR = os.path.join(SERVER_DIR, "disabled_mods")
+# Adicionar uma verificação para saber se é windows ou linux
 SERVER_START_SCRIPT = "./run.sh nogui"  # Command to start server without GUI
 
 # --- End Configuration ---
