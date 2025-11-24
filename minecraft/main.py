@@ -27,7 +27,7 @@ SERVER_DIR = (
 # 3. Server Settings
 SERVER_MODS_DIR = os.path.join(SERVER_DIR, "mods")
 DISABLED_MODS_DIR = os.path.join(SERVER_DIR, "disabled_mods")
-SERVER_START_SCRIPT = "./run.sh"  # Command to start server (e.g. ./run.sh or run.bat)
+SERVER_START_SCRIPT = "./run.sh nogui"  # Command to start server without GUI
 
 # --- End Configuration ---
 
