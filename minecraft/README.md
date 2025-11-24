@@ -1,88 +1,109 @@
-# Minecraft Server Mod Filter Automation
+# Automação de Filtro de Mods Minecraft
 
-This script automates the process of setting up a Minecraft server modpack by filtering out client-side-only mods that cause server crashes. It uses Google's Gemini AI to analyze crash reports and identify problematic mods.
+Este script automatiza o processo de configuração de um modpack de servidor Minecraft, filtrando mods exclusivos do cliente que causam falhas no servidor. Ele usa a IA Gemini do Google para analisar relatórios de falhas e identificar mods problemáticos.
 
-## Prerequisites
+## Pré-requisitos
 
-*   **Python 3.8+** installed on your system.
-*   **Minecraft Forge Server** installed and ready to run.
-*   **Client Modpack** installed (e.g., via CurseForge).
-*   **Google Gemini API Key** (Free).
+* **Python 3.8+** instalado no seu sistema.
+* **Servidor Minecraft Forge** instalado e pronto para rodar.
+* **Modpack do Cliente** instalado (ex: via CurseForge).
+* **Chave de API do Google Gemini** (Grátis).
 
-## Setup Instructions
+## Instruções de Configuração
 
-### 1. Create a Virtual Environment (venv)
+### 1. Criar um Ambiente Virtual (venv)
 
-It's best practice to use a virtual environment to manage dependencies. Open your terminal in this folder and run:
+É uma boa prática usar um ambiente virtual para gerenciar dependências. Abra seu terminal nesta pasta e execute:
 
 **Windows:**
+
 ```bash
 python -m venv venv
 .\venv\Scripts\activate
 ```
 
 **Linux/Mac:**
+
 ```bash
 python3 -m venv venv
 source venv/bin/activate
 ```
 
-### 2. Install Dependencies
+### 2. Instalar Dependências
 
-With the virtual environment activated, install the required libraries:
+Com o ambiente virtual ativado, instale as bibliotecas necessárias:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 3. VS Code Configuration (Optional but Recommended)
+### 3. Obter uma Chave de API do Gemini
 
-If you are using VS Code:
-1.  Open the Command Palette (`Ctrl+Shift+P` or `Cmd+Shift+P`).
-2.  Type "Python: Select Interpreter".
-3.  Select the interpreter that corresponds to the `venv` folder you just created (it should say something like `venv/bin/python` or `venv\Scripts\python.exe`).
+1. Vá para [Google AI Studio](https://aistudio.google.com/app/apikey).
+2. Clique em "Create API key".
+3. Copie a chave gerada.
 
-### 4. Get a Gemini API Key
+## Como Usar (Modo Gráfico - Recomendado)
 
-1.  Go to [Google AI Studio](https://aistudio.google.com/app/apikey).
-2.  Click on "Create API key".
-3.  Copy the generated key.
+Para facilitar a configuração, criamos um lançador com interface gráfica.
 
-### 5. Configure the Script
+1. Execute o lançador:
 
-Open `main.py` and edit the **Configuration** section at the top:
+    ```bash
+    python gui_launcher.py
+    ```
 
-*   **`GEMINI_API_KEY`**: Paste your API key here.
-*   **`CLIENT_MODS_DIR`**: The full path to your client-side mods folder (e.g., inside your CurseForge instance).
-*   **`SERVER_DIR`**: The full path to your Minecraft server folder.
+2. Preencha os campos:
+    * **Gemini API Key**: Cole sua chave aqui.
+    * **Pasta Mods Cliente**: Selecione a pasta `mods` do seu cliente Minecraft.
+    * **Pasta do Servidor**: Selecione a pasta raiz do seu servidor Minecraft.
+3. Clique em **Salvar Configuração**.
+4. Clique em **INICIAR AUTOMAÇÃO**.
 
-**Example:**
-```python
-GEMINI_API_KEY = "AIzaSy..."
-CLIENT_MODS_DIR = "C:/Users/You/curseforge/minecraft/Instances/MyModpack/mods"
-SERVER_DIR = "C:/MinecraftServer"
-```
+Uma nova janela de terminal se abrirá mostrando o progresso do script.
 
-## How to Run
+## Como Usar (Modo Terminal)
 
-Ensure your virtual environment is activated, then run:
+Se preferir, você pode editar o arquivo `config.json` manualmente (será criado após a primeira execução da GUI) ou editar as variáveis no topo do `main.py`.
+
+Execute:
 
 ```bash
 python main.py
 ```
 
-## What the Script Does
+## Criando um Executável (.exe) para Windows
 
-1.  **Syncs Mods**: Copies all mods from your Client folder to the Server `mods` folder (only if the server folder is empty).
-2.  **Starts Server**: Attempts to start the Minecraft server.
-3.  **Detects Crashes**: If the server crashes, it reads the crash report.
-4.  **AI Analysis**: Sends the crash report to Gemini AI to identify the specific mod causing the crash.
-5.  **Filters Mods**: Moves the identified problematic mod to a `disabled_mods` folder.
-6.  **Repeats**: Automatically restarts the process until the server starts successfully.
-7.  **Success**: Once the server starts, it keeps running. You can stop it safely with `Ctrl+C`.
+Se você quiser criar um arquivo `.exe` para rodar em computadores sem Python instalado:
 
-## Troubleshooting
+1. Instale o PyInstaller (já incluído no requirements.txt):
 
-*   **"Server mods directory is empty"**: The script will automatically copy mods from your client directory.
-*   **"Could not identify the bad mod"**: The AI might fail sometimes. The script has a retry mechanism, but if it persists, check the logs manually.
-*   **Windows vs Linux**: The script automatically detects your OS and uses `run.bat` (Windows) or `./run.sh` (Linux) to start the server. Ensure these scripts exist in your server folder.
+    ```bash
+    pip install pyinstaller
+    ```
+
+2. Execute o comando de build:
+
+    ```bash
+    pyinstaller --noconfirm --onefile --windowed --name "MinecraftModAutomator" --add-data "main.py;." gui_launcher.py
+    ```
+
+    *Nota: O argumento `--add-data "main.py;."` é para Windows. No Linux/Mac use `--add-data "main.py:."`.*
+
+3. O executável estará na pasta `dist`. Você pode mover o `MinecraftModAutomator.exe` para onde quiser, mas certifique-se de que ele tenha acesso às pastas do Minecraft.
+
+## O que o Script Faz
+
+1. **Sincroniza Mods**: Copia todos os mods da sua pasta do Cliente para a pasta `mods` do Servidor (apenas se a pasta do servidor estiver vazia).
+2. **Inicia o Servidor**: Tenta iniciar o servidor Minecraft.
+3. **Detecta Falhas**: Se o servidor crashar, ele lê o relatório de falha.
+4. **Análise de IA**: Envia o relatório para o Gemini AI identificar o mod específico que causou o problema.
+5. **Filtra Mods**: Move o mod problemático identificado para uma pasta `disabled_mods`.
+6. **Repete**: Reinicia automaticamente o processo até que o servidor inicie com sucesso.
+7. **Sucesso**: Assim que o servidor iniciar, ele continua rodando. Você pode pará-lo com segurança usando `Ctrl+C` na janela do terminal.
+
+## Solução de Problemas
+
+* **"Diretório de mods do servidor vazio"**: O script copiará automaticamente os mods do seu diretório de cliente.
+* **"Não foi possível identificar o mod"**: A IA pode falhar às vezes. O script tem um mecanismo de repetição, mas se persistir, verifique os logs manualmente.
+* **Windows vs Linux**: O script detecta automaticamente seu SO e usa `run.bat` (Windows) ou `./run.sh` (Linux). Certifique-se de que esses scripts existam na pasta do servidor.

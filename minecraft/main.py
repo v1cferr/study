@@ -3,75 +3,86 @@ import subprocess
 import shutil
 import time
 import glob
+import json
+import platform
 import google.generativeai as genai
 from pathlib import Path
 
 # Use `pip install -r requirements.txt` to install dependencies
 
-import platform
+# --- Configuração ---
+CONFIG_FILE = "config.json"
 
-# --- Configuration ---
-# EDIT THESE VARIABLES FOR YOUR LOCAL ENVIRONMENT
 
-# 1. Google Gemini API Key
-# Paste your key here. Since this is local, it's okay to hardcode it.
-GEMINI_API_KEY = "YOUR_API_KEY_HERE"
+def load_config():
+    """Carrega as configurações do arquivo JSON ou usa valores padrão/ambiente."""
+    config = {
+        "GEMINI_API_KEY": "YOUR_API_KEY_HERE",
+        "CLIENT_MODS_DIR": "",
+        "SERVER_DIR": "",
+    }
 
-# 2. Directories
-# The directory where your client-side modpack is installed (CurseForge instance)
-CLIENT_MODS_DIR = (
-    "/home/v1cferr/Projects/GitHub/v1cferr/study/minecraft/testes/minecraft-client/mods"
-)
+    if os.path.exists(CONFIG_FILE):
+        try:
+            with open(CONFIG_FILE, "r", encoding="utf-8") as f:
+                loaded_config = json.load(f)
+                config.update(loaded_config)
+        except Exception as e:
+            print(f"Erro ao ler {CONFIG_FILE}: {e}")
 
-# The directory where your server is installed
-SERVER_DIR = (
-    "/home/v1cferr/Projects/GitHub/v1cferr/study/minecraft/testes/minecraft-server"
-)
+    return config
 
-# 3. Server Settings
+
+config = load_config()
+
+GEMINI_API_KEY = config.get("GEMINI_API_KEY")
+CLIENT_MODS_DIR = config.get("CLIENT_MODS_DIR")
+SERVER_DIR = config.get("SERVER_DIR")
+
+# --- Validação de Diretórios ---
+if not SERVER_DIR:
+    # Tenta adivinhar se não estiver configurado (diretório atual)
+    SERVER_DIR = os.getcwd()
+
 SERVER_MODS_DIR = os.path.join(SERVER_DIR, "mods")
 DISABLED_MODS_DIR = os.path.join(SERVER_DIR, "disabled_mods")
 
-# Automatic OS detection for start script
+# Detecção automática do SO para o script de inicialização
 if platform.system() == "Windows":
     SERVER_START_SCRIPT = "run.bat"
 else:
     SERVER_START_SCRIPT = "./run.sh"  # Linux/Mac
 
-# --- End Configuration ---
-
-# --- Gemini Setup ---
-if GEMINI_API_KEY:
+# --- Configuração do Gemini ---
+if GEMINI_API_KEY and GEMINI_API_KEY != "YOUR_API_KEY_HERE":
     genai.configure(api_key=GEMINI_API_KEY)
-    # Using gemini-2.0-flash as it is available in the user's list
     model = genai.GenerativeModel("gemini-2.0-flash")
 else:
-    print("WARNING: GEMINI_API_KEY not found. AI analysis will not work.")
     model = None
 
 
 def setup_environment():
-    """Ensures necessary directories exist."""
+    """Garante que os diretórios necessários existam."""
     if not os.path.exists(SERVER_DIR):
-        print(f"Error: Server directory not found at {SERVER_DIR}")
+        print(f"Erro: Diretório do servidor não encontrado em {SERVER_DIR}")
         return False
 
     if not os.path.exists(DISABLED_MODS_DIR):
         os.makedirs(DISABLED_MODS_DIR)
-        print(f"Created disabled mods directory at {DISABLED_MODS_DIR}")
+        print(f"Criado diretório para mods desativados em {DISABLED_MODS_DIR}")
 
     return True
 
 
 def run_server():
     """
-    Runs the Minecraft server.
-    Returns:
-        0 if server started successfully (detected "Done!").
-        1 if server crashed (detected crash keywords).
-        -1 if there was an error starting the server.
+    Executa o servidor Minecraft.
+    Retorna:
+        0 se o servidor iniciou com sucesso (detectou "Done!").
+        1 se o servidor crashou (detectou palavras-chave de crash).
+        -1 se houve erro ao iniciar o processo.
     """
-    print(f"Starting server in {SERVER_DIR}...")
+    print(f"Iniciando servidor em {SERVER_DIR}...")
     try:
         process = subprocess.Popen(
             SERVER_START_SCRIPT,
@@ -82,7 +93,7 @@ def run_server():
             text=True,
         )
 
-        # Monitor output for success or crash
+        # Monitora a saída para sucesso ou crash
         server_started = False
         crash_detected = False
 
@@ -93,17 +104,15 @@ def run_server():
             if line:
                 print(line.strip())
 
-                # Detect successful server startup
+                # Detecta inicialização bem-sucedida
                 if "Done (" in line and "For help, type 'help'" in line:
                     print("\n" + "=" * 60)
-                    print("  SERVER STARTED SUCCESSFULLY!")
-                    print("  The server is now running. Press Ctrl+C to stop.")
+                    print("  SERVIDOR INICIADO COM SUCESSO!")
+                    print("  O servidor está rodando. Pressione Ctrl+C para parar.")
                     print("=" * 60 + "\n")
                     server_started = True
-                    # Don't terminate - let it keep running!
-                    # Just keep reading output until the process ends
 
-                # Detect crashes during startup (before success)
+                # Detecta crashes durante a inicialização
                 if not server_started and (
                     "Crash report saved to" in line
                     or "Exception in thread" in line
@@ -111,81 +120,73 @@ def run_server():
                 ):
                     crash_detected = True
 
-        # Process has ended
+        # Processo terminou
         return_code = process.poll()
 
         if server_started:
-            # Server started successfully, then shut down (manually or gracefully)
-            print("\nServer has shut down.")
+            print("\nServidor foi desligado.")
             return 0
         elif crash_detected:
-            print("\nCrash detected via log output!")
+            print("\nCrash detectado via log!")
             return 1
         else:
-            # Process ended without "Done!" message - treat as crash
             if return_code != 0:
                 print(
-                    f"\nServer exited with code {return_code} before starting successfully."
+                    f"\nServidor saiu com código {return_code} antes de iniciar com sucesso."
                 )
                 return 1
             return return_code
     except KeyboardInterrupt:
-        print("\n\nReceived interrupt signal. Stopping server...")
+        print("\n\nRecebido sinal de interrupção. Parando servidor...")
         if process:
             process.terminate()
             try:
                 process.wait(timeout=10)
             except subprocess.TimeoutExpired:
-                print("Server did not stop gracefully. Killing process...")
+                print("Servidor não parou graciosamente. Forçando encerramento...")
                 process.kill()
-        return 0  # Don't treat Ctrl+C as a crash
+        return 0
     except Exception as e:
-        print(f"Failed to run server: {e}")
+        print(f"Falha ao rodar servidor: {e}")
         return -1
 
 
 def get_latest_log():
     """
-    Reads the content of logs/latest.log OR the latest crash report.
-    Returns the combined content, prioritizing the crash report.
+    Lê o conteúdo de logs/latest.log OU o relatório de crash mais recente.
+    Retorna o conteúdo combinado, priorizando o relatório de crash.
     """
     log_content = ""
     crash_content = ""
 
-    # 1. Check for recent crash reports (modified in the last 2 minutes)
+    # 1. Verifica relatórios de crash recentes (modificados nos últimos 5 minutos)
     crash_reports_dir = os.path.join(SERVER_DIR, "crash-reports")
     if os.path.exists(crash_reports_dir):
-        # Get list of files with full paths
         files = [
             os.path.join(crash_reports_dir, f) for f in os.listdir(crash_reports_dir)
         ]
         if files:
-            # Find the most recent file
             latest_crash = max(files, key=os.path.getmtime)
-            # Check if it was modified recently (e.g. within last 5 minutes)
             if time.time() - os.path.getmtime(latest_crash) < 300:
-                print(f"Found recent crash report: {latest_crash}")
+                print(f"Encontrado relatório de crash recente: {latest_crash}")
                 try:
                     with open(
                         latest_crash, "r", encoding="utf-8", errors="ignore"
                     ) as f:
                         crash_content = f.read()
                 except Exception as e:
-                    print(f"Error reading crash report: {e}")
+                    print(f"Erro ao ler relatório de crash: {e}")
 
-    # 2. Read latest.log
+    # 2. Lê latest.log
     log_path = os.path.join(SERVER_DIR, "logs", "latest.log")
     if os.path.exists(log_path):
         try:
             with open(log_path, "r", encoding="utf-8", errors="ignore") as f:
-                # Read only the last 20000 characters if no crash report,
-                # or less if we have a crash report to save context
                 content = f.read()
                 log_content = content[-20000:]
         except Exception as e:
-            print(f"Error reading log: {e}")
+            print(f"Erro ao ler log: {e}")
 
-    # Combine: Crash report FIRST, then recent log tail
     full_content = ""
     if crash_content:
         full_content += "--- CRASH REPORT (PRIORITY) ---\n" + crash_content + "\n\n"
@@ -196,87 +197,67 @@ def get_latest_log():
 
 
 def analyze_crash(log_content, ignore_list=None):
-    """Sends the log to Gemini to identify the problematic mod."""
-    print("Analyzing crash log with Gemini...")
+    """Envia o log para o Gemini identificar o mod problemático."""
+    if not model:
+        print("ERRO: Modelo Gemini não configurado. Verifique sua API Key.")
+        return None
+
+    print("Analisando log de crash com Gemini...")
 
     ignore_str = ""
     if ignore_list:
-        ignore_str = f"Do NOT suggest the following files as they were not found: {', '.join(ignore_list)}"
+        ignore_str = f"NÃO sugira os seguintes arquivos, pois não foram encontrados: {', '.join(ignore_list)}"
 
     prompt = f"""
-    You are a Minecraft server expert. The server crashed. 
-    Analyze the following log (which may include a crash report) and identify the ONE mod file (.jar) that caused the crash.
+    Você é um especialista em servidores Minecraft. O servidor crashou.
+    Analise o log a seguir (que pode incluir um relatório de crash) e identifique o ÚNICO arquivo de mod (.jar) que causou o crash.
     
-    CRITICAL INSTRUCTIONS:
-    1. Look for "Mod File: ... .jar" in the crash report section. This is the definitive answer.
-    2. Look for "Failure message: ... encountered an error" and the associated mod file.
-    3. Look for "Attempted to load class ... for invalid dist DEDICATED_SERVER".
+    INSTRUÇÕES CRÍTICAS:
+    1. Procure por "Mod File: ... .jar" na seção do relatório de crash. Esta é a resposta definitiva.
+    2. Procure por "Failure message: ... encountered an error" e o arquivo de mod associado.
+    3. Procure por "Attempted to load class ... for invalid dist DEDICATED_SERVER".
     
     {ignore_str}
     
-    Return ONLY the filename of the problematic mod (e.g., "modname-1.0.jar"). 
-    Do NOT write any explanation. Do NOT use markdown formatting like backticks. 
-    Just the filename.
+    Retorne APENAS o nome do arquivo do mod problemático (ex: "modname-1.0.jar").
+    NÃO escreva nenhuma explicação. NÃO use formatação markdown.
+    Apenas o nome do arquivo.
     
-    Log content:
+    Conteúdo do Log:
     """
 
     try:
-        model = genai.GenerativeModel("gemini-2.0-flash")
-        # Send prompt + content, ensuring we don't exceed limits but prioritizing the start (crash report)
         response = model.generate_content(prompt + log_content[:40000])
-
-        # Clean up response
         culprit = response.text.strip()
-
-        # Remove markdown backticks if present
         culprit = culprit.replace("`", "")
 
-        # If the AI is still verbose, try to find a .jar filename in the text
         import re
 
         match = re.search(r"[\w\-\.\+]+\.jar", culprit)
         if match:
             culprit = match.group(0)
 
-        print(f"Identified culprit: {culprit}")
+        print(f"Culpado identificado: {culprit}")
         return culprit
     except Exception as e:
-        print(f"Error communicating with Gemini: {e}")
+        print(f"Erro ao comunicar com Gemini: {e}")
         return None
 
 
 def find_mod_file(mod_filename):
-    """Finds the actual file path for a given mod filename in the mods dir."""
-    # Exact match
+    """Encontra o caminho real do arquivo para um nome de mod dado."""
     exact_path = os.path.join(SERVER_MODS_DIR, mod_filename)
     if os.path.exists(exact_path):
         return exact_path
 
-    # Fuzzy match: Try to find a file that contains the main part of the mod name
-    # e.g. "HoldMyItems-Mod.jar" -> search for "HoldMyItems" or "holdmyitems"
-
-    # 1. Try case-insensitive exact match
+    # Busca Fuzzy
     for f in os.listdir(SERVER_MODS_DIR):
         if f.lower() == mod_filename.lower():
             return os.path.join(SERVER_MODS_DIR, f)
 
-    # 2. Try removing version numbers/extensions and matching
-    # Simple heuristic: take the first part of the name before a dash or number
     import re
 
-    # Remove extension
     name_no_ext = os.path.splitext(mod_filename)[0]
-
-    # Try to match the start of the filename
-    # e.g. AI says "HoldMyItems-Mod", file is "holdmyitems-1.20.1..."
-    # Let's try to match the first few characters or words
-
-    # Strategy: Tokenize the AI guess and look for files containing those tokens
-    # But simpler: just look for the longest common substring or similar?
-    # Let's try a simpler approach: "contains" check for the base name
-
-    # Clean up the AI guess: remove "Mod", "Forge", "Fabric", version numbers
     clean_name = re.sub(
         r"[\-\_\s]?(mod|forge|fabric|mc\d+.*|v?\d+\..*)",
         "",
@@ -284,10 +265,10 @@ def find_mod_file(mod_filename):
         flags=re.IGNORECASE,
     )
 
-    if len(clean_name) < 3:  # Too short, dangerous
+    if len(clean_name) < 3:
         return None
 
-    print(f"Searching for mod file matching: {clean_name}")
+    print(f"Procurando por arquivo de mod contendo: {clean_name}")
 
     candidates = []
     for f in os.listdir(SERVER_MODS_DIR):
@@ -298,9 +279,8 @@ def find_mod_file(mod_filename):
         return os.path.join(SERVER_MODS_DIR, candidates[0])
     elif len(candidates) > 1:
         print(
-            f"Multiple candidates found for {mod_filename}: {candidates}. Picking the shortest one."
+            f"Múltiplos candidatos encontrados para {mod_filename}: {candidates}. Escolhendo o mais curto."
         )
-        # Heuristic: shortest filename is often the "cleanest" match or we just pick one.
         candidates.sort(key=len)
         return os.path.join(SERVER_MODS_DIR, candidates[0])
 
@@ -308,54 +288,52 @@ def find_mod_file(mod_filename):
 
 
 def disable_mod(mod_path):
-    """Moves the mod file to the disabled_mods directory."""
+    """Move o arquivo do mod para o diretório disabled_mods."""
     filename = os.path.basename(mod_path)
     target_path = os.path.join(DISABLED_MODS_DIR, filename)
 
     try:
         shutil.move(mod_path, target_path)
-        print(f"Moved {filename} to {DISABLED_MODS_DIR}")
+        print(f"Movido {filename} para {DISABLED_MODS_DIR}")
         return True
     except Exception as e:
-        print(f"Failed to move mod: {e}")
+        print(f"Falha ao mover mod: {e}")
         return False
 
 
 def sync_mods():
-    """
-    Checks if server mods directory is empty.
-    If so, copies all mods from client mods directory.
-    """
+    """Copia mods do cliente se a pasta de mods do servidor estiver vazia."""
     if not os.path.exists(SERVER_MODS_DIR):
         os.makedirs(SERVER_MODS_DIR)
-        print(f"Created server mods directory: {SERVER_MODS_DIR}")
+        print(f"Criado diretório de mods do servidor: {SERVER_MODS_DIR}")
 
-    # Check if empty
     if not os.listdir(SERVER_MODS_DIR):
-        print("Server mods directory is empty. Syncing from client...")
-        if not os.path.exists(CLIENT_MODS_DIR):
-            print(f"Error: Client mods directory not found at {CLIENT_MODS_DIR}")
+        print("Diretório de mods do servidor vazio. Sincronizando do cliente...")
+        if not CLIENT_MODS_DIR or not os.path.exists(CLIENT_MODS_DIR):
+            print(
+                f"Erro: Diretório de mods do cliente não configurado ou não encontrado: {CLIENT_MODS_DIR}"
+            )
             return False
 
         mods = glob.glob(os.path.join(CLIENT_MODS_DIR, "*.jar"))
-        print(f"Found {len(mods)} mods in client directory.")
+        print(f"Encontrados {len(mods)} mods no diretório do cliente.")
 
         for mod in mods:
             shutil.copy2(mod, SERVER_MODS_DIR)
 
-        print(f"Copied {len(mods)} mods to server directory.")
+        print(f"Copiados {len(mods)} mods para o servidor.")
     else:
-        print("Server mods directory is not empty. Skipping sync.")
+        print("Diretório de mods do servidor não está vazio. Pulando sincronização.")
 
     return True
 
 
 def main():
-    if GEMINI_API_KEY == "YOUR_API_KEY_HERE":
+    if not GEMINI_API_KEY or GEMINI_API_KEY == "YOUR_API_KEY_HERE":
         print(
-            "ERROR: Please set your GEMINI_API_KEY in the script configuration section."
+            "ERRO: Por favor, configure sua GEMINI_API_KEY no arquivo config.json ou no script."
         )
-        print("You can get your API key here: https://aistudio.google.com/api-keys")
+        print("Você pode obter sua chave aqui: https://aistudio.google.com/api-keys")
         return
 
     if not setup_environment():
@@ -368,25 +346,21 @@ def main():
     retry_count = 0
 
     while retry_count < max_retries:
-        print(f"\n--- Attempt {retry_count + 1} ---")
+        print(f"\n--- Tentativa {retry_count + 1} ---")
 
-        # 1. Run Server
         return_code = run_server()
 
-        # 2. Check result
         if return_code == 0:
-            # Server started successfully (or was stopped with Ctrl+C)
             print("\n" + "=" * 60)
-            print("  Script finished. All problematic mods have been removed!")
+            print("  SCRIPT FINALIZADO. Todos os mods problemáticos foram removidos!")
             print("=" * 60 + "\n")
             break
         else:
-            print(f"\nServer crashed with return code {return_code}.")
+            print(f"\nServidor crashou com código {return_code}.")
 
-            # 3. Analyze Log
             log_content = get_latest_log()
             if not log_content:
-                print("Could not read log. Stopping.")
+                print("Não foi possível ler o log. Parando.")
                 break
 
             ignore_list = []
@@ -397,36 +371,37 @@ def main():
                 bad_mod_name = analyze_crash(log_content, ignore_list)
 
                 if bad_mod_name and bad_mod_name != "UNKNOWN":
-
                     mod_path = find_mod_file(bad_mod_name)
                     if mod_path:
                         if disable_mod(mod_path):
-                            print("Mod disabled. Retrying server...")
+                            print("Mod desativado. Reiniciando servidor...")
                             retry_count += 1
-                            time.sleep(2)  # Brief pause
-                            break  # Break inner loop to restart server
+                            time.sleep(2)
+                            break
                         else:
-                            print("Could not disable mod. Stopping.")
-                            return  # Fatal error
+                            print("Não foi possível desativar o mod. Parando.")
+                            return
                     else:
-                        print(f"Could not find file for mod: {bad_mod_name}.")
+                        print(
+                            f"Não foi possível encontrar arquivo para o mod: {bad_mod_name}."
+                        )
                         ignore_list.append(bad_mod_name)
                         analysis_attempts += 1
                         print(
-                            f"Retrying analysis (attempt {analysis_attempts+1}/{max_analysis_attempts})..."
+                            f"Tentando análise novamente (tentativa {analysis_attempts+1}/{max_analysis_attempts})..."
                         )
                 else:
-                    print("Could not identify the bad mod from the log. Stopping.")
-                    return  # Fatal error
+                    print("Não foi possível identificar o mod problemático. Parando.")
+                    return
 
             if analysis_attempts >= max_analysis_attempts:
                 print(
-                    "Failed to identify a valid mod file after multiple attempts. Stopping."
+                    "Falha ao identificar um arquivo de mod válido após várias tentativas. Parando."
                 )
                 break
 
     if retry_count >= max_retries:
-        print("Max retries reached. Please investigate manually.")
+        print("Máximo de tentativas atingido. Por favor, investigue manualmente.")
 
 
 if __name__ == "__main__":

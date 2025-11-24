@@ -2,3 +2,4 @@ senac/tmp/
 venv/
 testes/
 __pycache__/
+config.json
