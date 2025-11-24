@@ -59,7 +59,8 @@ def run_server():
     Runs the Minecraft server.
     Returns:
         0 if server started successfully (detected "Done!").
-        Exit code if server crashed.
+        1 if server crashed (detected crash keywords).
+        -1 if there was an error starting the server.
     """
     print(f"Starting server in {SERVER_DIR}...")
     try:
@@ -82,31 +83,53 @@ def run_server():
                 break
             if line:
                 print(line.strip())
+
+                # Detect successful server startup
                 if "Done (" in line and "For help, type 'help'" in line:
-                    print("Server started successfully!")
+                    print("\n" + "=" * 60)
+                    print("  SERVER STARTED SUCCESSFULLY!")
+                    print("  The server is now running. Press Ctrl+C to stop.")
+                    print("=" * 60 + "\n")
                     server_started = True
-                    process.terminate()
-                    try:
-                        process.wait(timeout=10)
-                    except subprocess.TimeoutExpired:
-                        process.kill()
-                    break
-                if (
+                    # Don't terminate - let it keep running!
+                    # Just keep reading output until the process ends
+
+                # Detect crashes during startup (before success)
+                if not server_started and (
                     "Crash report saved to" in line
                     or "Exception in thread" in line
                     or "java.lang.RuntimeException" in line
                 ):
                     crash_detected = True
 
+        # Process has ended
         return_code = process.poll()
 
         if server_started:
+            # Server started successfully, then shut down (manually or gracefully)
+            print("\nServer has shut down.")
             return 0
         elif crash_detected:
-            print("Crash detected via log output!")
+            print("\nCrash detected via log output!")
             return 1
         else:
+            # Process ended without "Done!" message - treat as crash
+            if return_code != 0:
+                print(
+                    f"\nServer exited with code {return_code} before starting successfully."
+                )
+                return 1
             return return_code
+    except KeyboardInterrupt:
+        print("\n\nReceived interrupt signal. Stopping server...")
+        if process:
+            process.terminate()
+            try:
+                process.wait(timeout=10)
+            except subprocess.TimeoutExpired:
+                print("Server did not stop gracefully. Killing process...")
+                process.kill()
+        return 0  # Don't treat Ctrl+C as a crash
     except Exception as e:
         print(f"Failed to run server: {e}")
         return -1
@@ -318,13 +341,6 @@ def sync_mods():
     return True
 
 
-def notify_success():
-    """Prints a success banner."""
-    print("\n" + "=" * 50)
-    print("       SERVER STARTED SUCCESSFULLY!       ")
-    print("=" * 50 + "\n")
-
-
 def main():
     if GEMINI_API_KEY == "YOUR_API_KEY_HERE":
         print(
@@ -349,10 +365,13 @@ def main():
 
         # 2. Check result
         if return_code == 0:
-            notify_success()
+            # Server started successfully (or was stopped with Ctrl+C)
+            print("\n" + "=" * 60)
+            print("  Script finished. All problematic mods have been removed!")
+            print("=" * 60 + "\n")
             break
         else:
-            print(f"Server crashed with return code {return_code}.")
+            print(f"\nServer crashed with return code {return_code}.")
 
             # 3. Analyze Log
             log_content = get_latest_log()
