@@ -355,6 +355,7 @@ def main():
         print(
             "ERROR: Please set your GEMINI_API_KEY in the script configuration section."
         )
+        print("You can get your API key here: https://aistudio.google.com/api-keys")
         return
 
     if not setup_environment():
