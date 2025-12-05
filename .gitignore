@@ -3,3 +3,4 @@ venv/
 testes/
 __pycache__/
 config.json
+tmp0/
