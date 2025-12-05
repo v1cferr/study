@@ -2,46 +2,51 @@ name: Check Padlet Mission
 
 on:
   schedule:
-    - cron: '*/5 * * * *'  # Executa a cada 5 minutos
-  workflow_dispatch:      # Permite execução manual
+    - cron: "0 * * * *" # Executa a cada 1 hora (minuto 0)
+  workflow_dispatch: # Permite execução manual
 
 jobs:
   check:
     runs-on: ubuntu-latest
+    timeout-minutes: 10 # Segurança: Mata o job se travar por mais de 10 min
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.10'
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: "pip" # OTIMIZAÇÃO: Faz cache automático das dependências do requirements.txt ou setup.py se existirem, ou do pip cache.
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install playwright requests
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install playwright requests
 
-    - name: Get Playwright Version
-      id: playwright-version
-      shell: bash
-      run: |
-        PLAYWRIGHT_VERSION=$(pip show playwright | grep Version | sed 's/Version: //')
-        echo "version=$PLAYWRIGHT_VERSION" >> $GITHUB_OUTPUT
+      - name: Get Playwright Version
+        id: playwright-version
+        shell: bash
+        run: |
+          PLAYWRIGHT_VERSION=$(pip show playwright | grep Version | sed 's/Version: //')
+          echo "version=$PLAYWRIGHT_VERSION" >> $GITHUB_OUTPUT
 
-    - name: Cache Playwright Browsers
-      uses: actions/cache@v3
-      id: playwright-cache
-      with:
-        path: ~/.cache/ms-playwright
-        key: ${{ runner.os }}-playwright-${{ steps.playwright-version.outputs.version }}
-        restore-keys: |
-          ${{ runner.os }}-playwright-
+      - name: Cache Playwright Browsers
+        uses: actions/cache@v4
+        id: playwright-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ steps.playwright-version.outputs.version }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-
 
-    - name: Install Playwright Browsers
-      if: steps.playwright-cache.outputs.cache-hit != 'true'
-      run: playwright install chromium
+      - name: Install Playwright Browsers
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: playwright install chromium
 
-    - name: Run Padlet Checker
-      run: python senac/cron-job.org/check_padlet.py
+      - name: Run Padlet Checker
+        env:
+          # Ex: DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          PYTHONUNBUFFERED: 1
+        run: python senac/cron-job.org/check_padlet.py
