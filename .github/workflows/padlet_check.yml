@@ -1,9 +1,11 @@
 name: Check Padlet Mission
 
-on:
-  schedule:
-    - cron: "0 * * * *" # Executa a cada 1 hora (minuto 0)
-  workflow_dispatch: # Permite execução manual
+on: [] # desativado
+
+# on:
+#   schedule:
+#     - cron: "0 * * * *" # Executa a cada 1 hora (minuto 0)
+#   workflow_dispatch: # Permite execução manual
 
 jobs:
   check:
