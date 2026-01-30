@@ -1,0 +1,19 @@
+@HostAddress = http://localhost:5190
+
+### 1. Listar todos os clientes (GET)
+GET {{HostAddress}}/api/clientes
+Accept: application/json
+
+### 2. Cadastrar um novo cliente (POST)
+POST {{HostAddress}}/api/clientes
+Content-Type: application/json
+
+{
+  "nome": "Gestor da Triplos",
+  "email": "gestor@triplos.com.br",
+  "cidade": "São Carlos"
+}
+
+### 3. Buscar cliente específico (GET por ID)
+GET {{HostAddress}}/api/clientes/1
+Accept: application/json
