@@ -132,6 +132,22 @@ O [caminho de AI Engineer da Microsoft Learn](https://learn.microsoft.com/en-us/
 - [ ] Seguranca
 - [ ] Feedback de producao
 
+## Estrutura pratica
+
+Cada degrau da trilha [construir-do-zero.md](./construir-do-zero.md) tem sua pasta, com um README de objetivo e criterio de conclusao:
+
+```
+00-micrograd/   autograd escalar do zero
+01-tensores/    tensores e loop de treino na mao
+02-atencao/     self-attention e bloco transformer
+03-nanogpt/     LLM de caracteres treinado na Arc
+04-bpe/         tokenizador BPE do zero
+05-inferencia/  inferencia real, GGUF, quantizacao e o bench
+06-kernel/      kernel de GPU em SYCL (Arc) e CUDA (5090)
+```
+
+O `flake.nix` provisiona o ambiente base (Python, runtime da Arc e ferramentas). Entrar com `nix develop`. Ver as instrucoes no `shellHook` para instalar o PyTorch com backend XPU.
+
 ## Documentos
 
 - [construir-do-zero.md](./construir-do-zero.md): a "linguagem C" dos LLM. Escada passo a passo, do neuronio ao kernel, construindo cada primitivo na mao.
