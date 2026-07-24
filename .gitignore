@@ -23,7 +23,7 @@ obj/
 config.json
 
 # --- Binários compilados (C etc.) ---
-fabio-akita/hello-world-c/hello
+cursos/fabio-akita/hello-world-c/hello
 
 # --- Sistema operacional / editor ---
 .DS_Store

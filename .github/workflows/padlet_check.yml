@@ -51,4 +51,4 @@ jobs:
         env:
           # Ex: DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
           PYTHONUNBUFFERED: 1
-        run: python senac/cron-job.org/check_padlet.py
+        run: python instituicoes/senac/cron-job.org/check_padlet.py
