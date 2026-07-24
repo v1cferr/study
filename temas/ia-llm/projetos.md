@@ -32,6 +32,35 @@ Ensina na pratica: VRAM, quantizacao, KV cache, throughput versus latencia, pref
 
 Rodar o mesmo protocolo na RTX 5090 da FAI transforma isso num comparativo Intel versus NVIDIA (SYCL, Vulkan e OpenVINO versus CUDA e TensorRT-LLM). E material raro e diferenciado, e o tipo de resultado que quase ninguem publica sobre a Arc.
 
+#### Protocolo detalhado
+
+Modelos (todos precisam caber em 12 GB quantizados na Arc):
+- Qwen2.5 7B e Llama 3.1 8B como base.
+- Qwen2.5 14B em Q4 para testar o limite dos 12 GB.
+- Um modelo de embeddings (bge-m3 ou e5) medido a parte.
+
+Variaveis a varrer:
+- Quantizacao: Q4_K_M, Q5_K_M, Q8_0 (e FP16 quando couber, o que so vale para modelos pequenos).
+- Context length: 512, 2k, 8k e 32k tokens, observando VRAM e velocidade.
+- Batch size: 1 versus lotes maiores, para ver o efeito no throughput e na latencia.
+- Backend: llama.cpp Vulkan, llama.cpp SYCL, IPEX-LLM e OpenVINO na Arc; llama.cpp CUDA, vLLM e TensorRT-LLM na 5090.
+
+Metricas:
+- Prefill (prompt) em tokens por segundo e decoding (geracao) em tokens por segundo, medidos separadamente.
+- Time to first token.
+- VRAM de pico.
+- Efeito do context length no VRAM e na velocidade.
+- Se possivel, potencia e temperatura da GPU.
+
+Metodo:
+- Usar o `llama-bench` do llama.cpp como ponto de partida (ja padroniza prefill e decode).
+- Prompts fixos, seed fixa, rodada de warmup e N repeticoes com media e desvio.
+- Mudar uma variavel por vez; registrar versao de driver, backend e modelo.
+
+Entrega:
+- Um `flake.nix` que reproduz o ambiente de medicao (reaproveita o projeto 0).
+- Um relatorio em markdown no repo com tabelas e graficos, e uma conclusao por pergunta: qual backend rende mais na Arc, onde a Arc se aproxima ou fica longe da 5090, e qual quantizacao tem o melhor custo de qualidade versus VRAM.
+
 ### 2. RAG institucional local
 
 Camada: RAG (mais contexto).

@@ -134,6 +134,7 @@ O [caminho de AI Engineer da Microsoft Learn](https://learn.microsoft.com/en-us/
 
 ## Documentos
 
+- [construir-do-zero.md](./construir-do-zero.md): a "linguagem C" dos LLM. Escada passo a passo, do neuronio ao kernel, construindo cada primitivo na mao.
 - [estrategia.md](./estrategia.md): ordem de estudo (matematica, ML, PyTorch, transformers, inferencia), as duas linhas paralelas e o mapa de conexoes teoria para aplicacao.
 - [recursos.md](./recursos.md): tres trilhas (Microsoft Learn, roadmap.sh, fundamentos) cruzadas com as camadas do roadmap.
 - [projetos.md](./projetos.md): ideias de projeto calibradas para o setup (Intel Arc B580, 16 GB RAM, NixOS).
