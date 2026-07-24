@@ -2,6 +2,8 @@
 
 Parte da trilha [construir do zero](../construir-do-zero.md). Referencia: [micrograd](https://github.com/karpathy/micrograd).
 
+Comece pelo tutorial guiado: [PASSO-A-PASSO.md](./PASSO-A-PASSO.md). Ele constroi o `micrograd.py` em 10 passos, cada um com explicacao e codigo para digitar.
+
 ## Objetivo
 
 Um motor de autograd escalar do zero, para entender backpropagation por dentro.
