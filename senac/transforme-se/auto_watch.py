@@ -43,7 +43,7 @@ def watch_course(page):
             # Verifica se existe vídeo na página
             if video_locator.count() > 0:
                 
-                # LÓGICA DE PLAYBACK INTELIGENTE
+                # LÓGICA DE PLAYBACK INTELIGENTE (Videogular Support)
                 video_state = page.evaluate("""() => {
                     const v = document.querySelector('video');
                     if (!v) return { status: 'no_video' };
@@ -52,7 +52,8 @@ def watch_course(page):
                         paused: v.paused,
                         ended: v.ended,
                         readyState: v.readyState, // 0=Nothing, 4=Enough Data
-                        currentTime: v.currentTime
+                        currentTime: v.currentTime,
+                        duration: v.duration
                     };
                 }""")
 
@@ -65,13 +66,55 @@ def watch_course(page):
                     elif video_state['paused']:
                         print("Vídeo está pausado. Tentando iniciar...")
                         try:
-                            # Tenta clicar no container do player primeiro, se existir
-                            if page.locator("vg-player").count() > 0:
-                                page.locator("vg-player").click(position={"x": 50, "y": 50})
+                            # Espera um pouco para garantir que o player carregou (anti-bot/loading)
+                            time.sleep(5)
+                            
+                            # Tenta estratégias específicas para Videogular
+                            vg_player = page.locator("vg-player").first
+                            
+                            if vg_player.count() > 0:
+                                print("Simulando hover humano no player...")
+                                box = vg_player.bounding_box()
+                                if box:
+                                    # Move para o centro com "humanidade"
+                                    target_x = box["x"] + box["width"] / 2
+                                    target_y = box["y"] + box["height"] / 2
+                                    human_move(page, target_x, target_y)
+                                    time.sleep(0.5)
+                            
+                            vg_overlay = page.locator(".vg-overlay-play").first
+                            
+                            if vg_overlay.is_visible():
+                                print("Clicando no overlay de play (humano)...")
+                                # Já estamos perto do centro (provavelmente), mas vamos garantir
+                                box = vg_overlay.bounding_box()
+                                if box:
+                                    human_move(page, box["x"] + box["width"] / 2, box["y"] + box["height"] / 2)
+                                    page.mouse.down()
+                                    time.sleep(random.uniform(0.05, 0.15))
+                                    page.mouse.up()
+                                else:
+                                    vg_overlay.click()
+                                    
+                            elif vg_player.count() > 0:
+                                print("Clicando no container do Videogular (humano)...")
+                                page.mouse.down()
+                                time.sleep(random.uniform(0.05, 0.15))
+                                page.mouse.up()
                             else:
-                                video_locator.click()
+                                print("Clicando diretamente no elemento de vídeo...")
+                                video_locator.click(force=True)
+                            
                             time.sleep(2)
-                        except:
+                            
+                            # Verificação pós-clique
+                            is_still_paused = page.evaluate("document.querySelector('video').paused")
+                            if is_still_paused:
+                                print("Clique falhou, forçando play via JS...")
+                                page.evaluate("document.querySelector('video').play().catch(e => console.error(e))")
+                                
+                        except Exception as e:
+                            print(f"Erro ao tentar dar play: {e}")
                             page.evaluate("document.querySelector('video').play().catch(e => {})")
 
                     elif video_state['readyState'] < 3:
@@ -80,6 +123,16 @@ def watch_course(page):
 
                     else:
                         # Vídeo está tocando e com dados carregados
+                        # Monitoramento de progresso
+                        try:
+                            curr = video_state.get('currentTime', 0)
+                            dur = video_state.get('duration', 1)
+                            if dur > 0:
+                                pct = (curr / dur) * 100
+                                print(f"Reproduzindo: {pct:.1f}% ({curr:.0f}s / {dur:.0f}s)")
+                        except:
+                            pass
+
                         page.evaluate(f"""
                             const v = document.querySelector('video');
                             if (v && v.playbackRate !== {VIDEO_SPEED}) {{
@@ -133,14 +186,36 @@ def watch_course(page):
             time.sleep(5)
 
 
+import random
+
+def human_move(page, x, y):
+    """Simula movimento humano do mouse até (x, y) usando steps do Playwright"""
+    steps = random.randint(15, 30)
+    page.mouse.move(x, y, steps=steps)
+
 def run():
     with sync_playwright() as p:
-        print("--- Iniciando Browser ---")
+        print("--- Iniciando Browser (Modo Stealth) ---")
         browser = p.chromium.launch(
             headless=HEADLESS_MODE, 
-            args=["--start-maximized", "--autoplay-policy=no-user-gesture-required"]
+            args=[
+                "--start-maximized", 
+                "--autoplay-policy=no-user-gesture-required",
+                "--disable-blink-features=AutomationControlled" # Stealth: Remove flag de automação
+            ]
         )
-        context = browser.new_context(no_viewport=True)
+        context = browser.new_context(
+            no_viewport=True,
+            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" # User Agent comum
+        )
+        
+        # Stealth: Mascara a propriedade navigator.webdriver
+        context.add_init_script("""
+            Object.defineProperty(navigator, 'webdriver', {
+                get: () => undefined
+            });
+        """)
+        
         page = context.new_page()
 
         # 1. Realizar Login
