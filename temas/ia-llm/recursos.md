@@ -41,10 +41,17 @@
 - Jay Alammar, The Illustrated Transformer: <https://jalammar.github.io/illustrated-transformer/>
 - Andrej Karpathy, Neural Networks Zero to Hero e nanoGPT: <https://karpathy.ai/zero-to-hero.html> e <https://github.com/karpathy/nanoGPT>
 
-### Inferencia e GPU (stack Intel Arc)
+### Inferencia e GPU
+
+Stack Intel Arc (maquina local, fronteira a explorar):
 - IPEX-LLM (Intel Extension for PyTorch para LLM, suporta Arc e integra llama.cpp, Ollama e vLLM): <https://github.com/intel/ipex-llm>
 - OpenVINO (toolkit de inferencia da Intel, plugin de GPU para Arc): <https://docs.openvino.ai/>
 - llama.cpp (backends SYCL e Vulkan funcionam na Arc): <https://github.com/ggerganov/llama.cpp>
+
+Stack NVIDIA / CUDA (RTX 5090 na FAI, base de referencia e cargas pesadas):
+- CUDA toolkit, cuDNN e TensorRT-LLM.
+- vLLM para serving de alto throughput.
+- llama.cpp tambem tem backend CUDA, util para comparar o mesmo binario nos dois lados.
 
 ### Microsoft / Azure (foco de medio prazo)
 - AI Engineer career path (referencia-alvo): <https://learn.microsoft.com/en-us/training/career-paths/ai-engineer>

@@ -1,11 +1,12 @@
 # Ideias de projeto
 
-> Calibradas para o setup atual: Intel Arc B580 (12 GB VRAM), Intel i5-11400 (12 threads), 16 GB de RAM, NixOS 26.05. Cada projeto conecta a uma ou mais camadas do roadmap (ver `README.md`).
+> Calibradas para dois ambientes: a maquina local com Intel Arc B580 (12 GB VRAM), i5-11400 e 16 GB de RAM em NixOS 26.05, e a workstation da FAI.UFSCar com RTX 5090 (CUDA). A Arc foi escolhida de proposito para explorar e levar ao limite a stack Intel, menos trilhada; o CUDA ja e estudado e estavel na 5090. Comparar os dois lados e um angulo de primeira classe aqui. Cada projeto conecta a uma ou mais camadas do roadmap (ver `README.md`).
 
-## O que o setup permite e limita
+## Ambientes e limites
 
-- Intel Arc B580, 12 GB VRAM: roda bem modelos de 7B a 14B quantizados (Q4 a Q8), embeddings e modelos pequenos de treino. Nao e CUDA: a stack e Intel (PyTorch XPU, IPEX-LLM, llama.cpp SYCL/Vulkan, OpenVINO). Boa parte dos tutoriais assume NVIDIA, entao parte do aprendizado e adaptar para a Arc.
-- 16 GB de RAM: e o gargalo mais apertado. Limita offload de modelos grandes para a CPU e rodar muita coisa em paralelo. Modelos que cabem na VRAM funcionam bem; modelos que dependem de offload vao sofrer. Um upgrade de RAM e o melhor custo-beneficio futuro.
+- Intel Arc B580 (local), 12 GB VRAM: roda bem modelos de 7B a 14B quantizados (Q4 a Q8), embeddings e modelos pequenos de treino. Stack Intel (PyTorch XPU, IPEX-LLM, llama.cpp SYCL/Vulkan, OpenVINO). Boa parte dos tutoriais assume NVIDIA; adaptar para a Arc e o objetivo, nao um obstaculo: e terreno pouco explorado, onde da para aprender e documentar o que quase ninguem cobre.
+- RTX 5090 (FAI.UFSCar): ambiente CUDA para cargas pesadas, treino e fine-tuning serio, e a base de referencia nas comparacoes. O CUDA ja e estudado e estavel; a 5090 e a linha de base contra a qual medir a Arc.
+- 16 GB de RAM (local): e o gargalo mais apertado na maquina local. Limita offload de modelos grandes para a CPU e rodar muita coisa em paralelo. Modelos que cabem na VRAM funcionam bem. Cargas que dependem de muita RAM ou treino pesado vao para a 5090.
 - i5-11400: suficiente para orquestracao, pre-processamento e inferencia em CPU de modelos pequenos.
 - NixOS: reprodutibilidade declarativa. Vale versionar cada ambiente de projeto como um flake, o que ja e um diferencial de engenharia e evita o classico "funciona so na minha maquina".
 
@@ -28,6 +29,8 @@ Camada: inferencia e GPU.
 Rodar o mesmo modelo quantizado (por exemplo Llama 3.1 8B ou Qwen2.5 7B/14B) em backends diferentes (llama.cpp Vulkan, llama.cpp SYCL, IPEX-LLM, OpenVINO) e medir: tokens por segundo, uso de VRAM, tempo de prefill versus decoding, efeito da quantizacao (Q4 versus Q8) e efeito do context length no consumo de memoria. Gerar um relatorio.
 
 Ensina na pratica: VRAM, quantizacao, KV cache, throughput versus latencia, prefill versus decoding. Conecta direto com a camada de inferencia.
+
+Rodar o mesmo protocolo na RTX 5090 da FAI transforma isso num comparativo Intel versus NVIDIA (SYCL, Vulkan e OpenVINO versus CUDA e TensorRT-LLM). E material raro e diferenciado, e o tipo de resultado que quase ninguem publica sobre a Arc.
 
 ### 2. RAG institucional local
 
@@ -69,6 +72,6 @@ Seguir o Karpathy Zero to Hero implementando no PyTorch com backend XPU: regress
 
 ## Observacoes honestas
 
-- A stack Intel Arc e mais nova e tem mais arestas que a NVIDIA. Espere gastar tempo com drivers e compatibilidade, o que e parte legitima do aprendizado de inferencia.
-- Fine-tuning serio (QLoRA de 7B) fica no limite dos 12 GB e da RAM de 16 GB. Comecar por modelos menores ou por inferencia e mais produtivo no comeco.
-- Versionar cada projeto como um flake do NixOS transforma uma limitacao (setup complexo) em vantagem (ambiente reproduzivel), que e exatamente o tipo de rigor esperado de um AI Systems Engineer.
+- A stack Intel Arc e mais nova e tem mais arestas que a NVIDIA, e esse e justamente o motivo da escolha: e terreno de fronteira, com pouco material publicado. Documentar o que funciona (drivers, backends, limites) ja e uma contribuicao com valor real.
+- Como o CUDA ja esta coberto pela RTX 5090 na FAI, da para usar a Arc local sem medo, empurrando ate quebrar, e deixar treino e fine-tuning pesado para a 5090. Na maquina local, comecar por inferencia rende mais (QLoRA de 7B fica no limite dos 12 GB e dos 16 GB de RAM).
+- Versionar cada projeto como um flake do NixOS transforma o setup complexo em vantagem (ambiente reproduzivel), exatamente o rigor esperado de um AI Systems Engineer.
