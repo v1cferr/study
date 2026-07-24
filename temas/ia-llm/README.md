@@ -122,6 +122,7 @@ A meta nao e virar cientista de modelos fundacionais, e sim conseguir distinguir
 
 ## Documentos
 
+- [estrategia.md](./estrategia.md): ordem de estudo (matematica, ML, PyTorch, transformers, inferencia), as duas linhas paralelas e o mapa de conexoes teoria para aplicacao.
 - [direcao.md](./direcao.md): analise completa da direcao de estudo e a justificativa por tras deste roadmap.
 
 ## Referencias
