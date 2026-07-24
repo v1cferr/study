@@ -4,6 +4,11 @@ Estudo de engenharia de sistemas de IA, com foco em AI systems engineering: cont
 
 ## Objetivo
 
+Metas de carreira em dois horizontes:
+
+- Medio prazo: AI Systems Engineer tecnicamente completo, capaz de construir, escalar e manter aplicacoes de IA em producao.
+- Longo prazo: AI Engineer no sentido amplo do [roadmap.sh/ai-engineer](https://roadmap.sh/ai-engineer).
+
 Perfil em T:
 
 - Base horizontal solida: ML, transformers, inferencia e fundamentos matematicos suficientes para compreender o comportamento dos modelos.
