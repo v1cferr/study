@@ -135,6 +135,8 @@ O [caminho de AI Engineer da Microsoft Learn](https://learn.microsoft.com/en-us/
 ## Documentos
 
 - [estrategia.md](./estrategia.md): ordem de estudo (matematica, ML, PyTorch, transformers, inferencia), as duas linhas paralelas e o mapa de conexoes teoria para aplicacao.
+- [recursos.md](./recursos.md): tres trilhas (Microsoft Learn, roadmap.sh, fundamentos) cruzadas com as camadas do roadmap.
+- [projetos.md](./projetos.md): ideias de projeto calibradas para o setup (Intel Arc B580, 16 GB RAM, NixOS).
 - [direcao.md](./direcao.md): analise completa da direcao de estudo e a justificativa por tras deste roadmap.
 
 ## Referencias
