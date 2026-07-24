@@ -29,6 +29,7 @@ study/
 
 | Pasta | Descricao |
 |-------|-----------|
+| [`temas/ia-llm`](./temas/ia-llm) | Engenharia de sistemas de IA/LLM: ML, transformers, inferencia, RAG, agentes, harness, avaliacao e producao. |
 | [`temas/assembly`](./temas/assembly) | Jornada do hardware ao `print()`, do silicio a logica de alto nivel. |
 | [`temas/csharp`](./temas/csharp) | Estudos em C# e .NET, Web API `CadastroClientes`. |
 | [`temas/minecraft`](./temas/minecraft) | Automacao de filtro de mods de servidor Minecraft usando IA. |
