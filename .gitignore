@@ -1,7 +1,28 @@
-senac/tmp/
-venv/
-testes/
-__pycache__/
-config.json
+# --- Temporários / scratch ---
+tmp/
 tmp0/
+testes/
+
+# --- Python ---
+venv/
+.venv/
+__pycache__/
+*.py[cod]
+
+# --- Node / Next.js (reforço; subprojetos têm o próprio .gitignore) ---
+node_modules/
+.next/
+
+# --- .NET (reforço; csharp/CadastroClientes tem o próprio .gitignore) ---
+bin/
+obj/
+
+# --- Segredos / configs locais ---
 .env
+.env.local
+config.json
+
+# --- Sistema operacional / editor ---
+.DS_Store
+Thumbs.db
+*.log
