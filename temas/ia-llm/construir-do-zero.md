@@ -6,6 +6,19 @@ Norte da trilha: Andrej Karpathy, Neural Networks Zero to Hero (<https://karpath
 
 Regra: em cada degrau, primeiro implementar na mao (Python puro ou numpy), depois refazer no PyTorch e conferir que bate. Entender vem do primeiro; produtividade, do segundo.
 
+## Como usar a IA para aprender isto (e nao virar dependente)
+
+Usar IA para organizar o estudo e para explicar conceitos e o uso certo. Copiar e colar solucao sem entender o porque e a armadilha. A diferenca pratica:
+
+- Errado: pedir a solucao pronta e colar. Voce nao desenvolve leitura de codigo nem capacidade de debugar.
+- Certo: usar a IA como professor. Perguntar "por que meu codigo anterior nao funcionou?", "como essa implementacao funciona por dentro?", "por que essa abordagem e melhor?". Executar cada comando novo na mao para criar memoria tecnica.
+
+Por isso cada degrau exige digitar o codigo, tem pontos de conferencia e um criterio de "feito". Se em algum momento voce estiver so lendo e concordando, pare e escreva o codigo.
+
+O que nao muda: ferramentas, frameworks e modelos vao mudar. Logica de programacao, estrutura de dados e entender o sistema por dentro sao a base que nao e substituivel. E o mesmo argumento do resto desta area (ver `direcao.md`).
+
+Referencia: Victor Navarro, "usar IA para aprender a programar e trapaca?": <https://youtu.be/zaJPcehnYCw>
+
 ## Degrau 0: o neuronio e a derivada
 
 - O que voce constroi: um motor de autograd escalar do zero, no estilo `micrograd` (<https://github.com/karpathy/micrograd>). Um `Value` que sabe fazer `backward()`, e uma MLP minima treinada so com isso.
