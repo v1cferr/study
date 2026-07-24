@@ -11,6 +11,13 @@ Perfil em T:
 
 A meta nao e virar cientista de modelos fundacionais, e sim conseguir distinguir uma implementacao correta de uma resposta apenas convincente, e diagnosticar o sistema camada a camada.
 
+## Referencia-alvo
+
+O [caminho de AI Engineer da Microsoft Learn](https://learn.microsoft.com/en-us/training/career-paths/ai-engineer) e a referencia central deste estudo, por dois motivos:
+
+- Relevancia imediata: a FAI.UFSCar usa bastante o ecossistema Microsoft/Azure.
+- Valor duravel: importa para a carreira mesmo fora da FAI.UFSCar depois.
+
 ## Roadmap
 
 1. Fundamentos de ML
@@ -126,6 +133,8 @@ A meta nao e virar cientista de modelos fundacionais, e sim conseguir distinguir
 - [direcao.md](./direcao.md): analise completa da direcao de estudo e a justificativa por tras deste roadmap.
 
 ## Referencias
+
+- [AI Engineer career path, Microsoft Learn](https://learn.microsoft.com/en-us/training/career-paths/ai-engineer) (referencia-alvo)
 
 1. [Trustworthy agents in practice, Anthropic](https://www.anthropic.com/research/trustworthy-agents)
 2. [A practical guide to building agents, OpenAI](https://openai.com/business/guides-and-resources/a-practical-guide-to-building-ai-agents/)
